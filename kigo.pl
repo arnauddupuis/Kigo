@@ -2,12 +2,19 @@
 
 ## Copyright Arnaud Dupuis <arnaud [dot] l [dot] dupuis [at] gmail [dot] com>
 ## License: GPLv3
-## Version: 0.1s
+## Version: 0.01
 
 use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dumper;
+
+# global variables (I know).
+my $global_verbose=0;
+
+sub verbose {
+	print shift if($global_verbose);
+}
 
 sub loadConfig {
 	my $cfg = shift;
@@ -15,7 +22,7 @@ sub loadConfig {
 	while(<$fh>){
 		chomp;
 		next if(/^[#\/!*]+/);
-# 		print "Processing: $_\n";
+		verbose "Processing: $_\n";
 # 		my ($key,$value)=split(/=/,$_);
 		my ($key,$value)= $_ =~ /^([^=]+)\s*=\s*(.+)$/;
 		$cfg->{$key} = $value unless(defined($cfg->{$key}));
@@ -39,9 +46,43 @@ sub writeFile {
 	print $fh $data;
 	close($fh);
 }
+
 my $config={templates_basedir=>'./templates'};
+my $templates = {};
 $config->{templates_basedir}=$ENV{KIGO_TEMPLATE_PATH} if(defined($ENV{KIGO_TEMPLATE_PATH}) && $ENV{KIGO_TEMPLATE_PATH});
-print "templates base directory is: $config->{templates_basedir}\n";
+GetOptions ("define=s" => $config,"verbose"=>\$global_verbose);
+verbose "templates base directory is: $config->{templates_basedir}\n";
+
+verbose "Scanning available templates:\n";
+opendir(my $dh, $config->{templates_basedir}) || die;
+my @templates_list = grep { !/^\./ && -d "$config->{templates_basedir}/$_" } readdir $dh;
+closedir $dh;
+foreach (@templates_list){
+	verbose "- $_";
+	$templates->{$_} = {};
+	# The template.ini file is required
+	if( -e "$config->{templates_basedir}/$_/template.ini" ){
+		
+		if(-z "$config->{templates_basedir}/$_/template.ini" ){
+			$templates->{$_}->{is_valid} = 0;
+			verbose " (INVALID: template.ini looks empty !)";
+		}
+		elsif( ! -r "$config->{templates_basedir}/$_/template.ini" ){
+			$templates->{$_}->{is_valid} = 0;
+			verbose " (INVALID: template.ini looks unreadable !)";
+		}
+		else{
+			$templates->{$_}->{is_valid} = 1;
+			verbose " (Valid)";
+		}
+	}
+	else{
+		$templates->{$_}->{is_valid} = 0;
+		verbose " (INVALID: miss template.ini !)";
+	}
+	verbose "\n";
+}
+
 my $members = {};
 my $extra = {};
 my $code_gen = {
@@ -58,4 +99,5 @@ my $code_gen = {
 	extra_includes => "",
 	copy_operator => ""
 };
+die "[critical] You MUST pass a template file as argument." unless(defined($ARGV[0]));
 loadConfig($config,$ARGV[0]);
