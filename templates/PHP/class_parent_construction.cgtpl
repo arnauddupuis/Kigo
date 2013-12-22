@@ -1,0 +1,2 @@
+# This template should be a one liner that describe the way the class must construct its parent if needed.
+/*__K_PARENT_CONSTRUCTION__*/(/*__PARENT_CONSTRUCTOR_PARAMETERS__*/)

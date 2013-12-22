@@ -1,0 +1,5 @@
+# Getter template for PHP
+	// Get the current value of the "/*__LC_MEMBERNAME__*/" parameter.
+	public function get/*__UCF_MEMBERNAME__*/(){
+		return $this->m_/*__LC_MEMBERNAME__*/;
+	}

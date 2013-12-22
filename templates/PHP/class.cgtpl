@@ -1,0 +1,25 @@
+# Main class code (except getters, setters and extra templates) for PHP
+<?php
+
+/*__LICENCE__*/
+
+/*__INCLUDES__*/
+
+class /*__CLASS_NAME__*/ /*__INHERITANCE__*/ {
+	/*__MEMBER_VARIABLES_DECLARATION__*/
+	public function __construct(/*__CONSTRUCTOR_PARAMETERS__*/){
+		parent::__construct("Projects",  "project_id");
+		/*__CLASS_PARENT_CONSTRUCTION__*/
+		/*__MEMBER_VARIABLES_INIT__*/
+		/*__EXTRA_CONSTRUCTOR_CODE__*/
+	}
+	
+	// Setters (slots)
+	/*__SETTERS__*/
+
+	// Getters
+	/*__GETTERS__*/
+	
+	/*__EXTRA_TEMPLATES_PLACEHOLDER__*/
+}
+?>

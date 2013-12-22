@@ -1,4 +1,6 @@
 Kigo
 ====
 
-A highly modular code generator for API.
+A highly modular API code generator.
+
+Author: Arnaud Dupuis.

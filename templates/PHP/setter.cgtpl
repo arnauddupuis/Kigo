@@ -1,0 +1,5 @@
+# Setter template for PHP
+	// Set the "/*__LC_MEMBERNAME__*/" parameter.
+	public function set/*__UCF_MEMBERNAME__*/($p_/*__LC_MEMBERNAME__*/){
+		$this->m_/*__LC_MEMBERNAME__*/ = $p_/*__LC_MEMBERNAME__*/;
+	}
