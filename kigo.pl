@@ -52,6 +52,9 @@ sub loadTemplate {
 	my $tpl_struct = shift;
 	my $file = shift;
 	loadConfig($tpl_struct,$file);
+	# TODO: process each template key
+	foreach my $tmp_key ( %{} ){
+	}
 }
 
 my $config={templates_basedir=>'./templates'};
