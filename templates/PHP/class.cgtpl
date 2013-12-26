@@ -11,7 +11,7 @@ class /*__CLASS_NAME__*/ /*__INHERITANCE__*/ {
 		parent::__construct("Projects",  "project_id");
 		/*__CLASS_PARENT_CONSTRUCTION__*/
 		/*__MEMBER_VARIABLES_INIT__*/
-		/*__EXTRA_CONSTRUCTOR_CODE__*/
+		/*__CLASS_EXTRA_CONSTRUCTOR_CODE__*/
 	}
 	
 	// Setters (slots)

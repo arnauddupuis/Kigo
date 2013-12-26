@@ -22,6 +22,7 @@ sub loadConfig {
 	while(<$fh>){
 		chomp;
 		next if(/^[#\/!*]+/);
+		next if(/^\s*$/);
 		verbose "Processing: $_\n";
 # 		my ($key,$value)=split(/=/,$_);
 		my ($key,$value)= $_ =~ /^([^=]+)\s*=\s*(.+)$/;
@@ -47,6 +48,12 @@ sub writeFile {
 	close($fh);
 }
 
+sub loadTemplate {
+	my $tpl_struct = shift;
+	my $file = shift;
+	loadConfig($tpl_struct,$file);
+}
+
 my $config={templates_basedir=>'./templates'};
 my $templates = {};
 $config->{templates_basedir}=$ENV{KIGO_TEMPLATE_PATH} if(defined($ENV{KIGO_TEMPLATE_PATH}) && $ENV{KIGO_TEMPLATE_PATH});
@@ -65,19 +72,23 @@ foreach (@templates_list){
 		
 		if(-z "$config->{templates_basedir}/$_/template.ini" ){
 			$templates->{$_}->{is_valid} = 0;
+			$templates->{$_}->{last_error} = "template.ini looks empty !";
 			verbose " (INVALID: template.ini looks empty !)";
 		}
 		elsif( ! -r "$config->{templates_basedir}/$_/template.ini" ){
 			$templates->{$_}->{is_valid} = 0;
+			$templates->{$_}->{last_error} = "template.ini looks unreadable !";
 			verbose " (INVALID: template.ini looks unreadable !)";
 		}
 		else{
 			$templates->{$_}->{is_valid} = 1;
+			$templates->{$_}->{content}={};
 			verbose " (Valid)";
 		}
 	}
 	else{
 		$templates->{$_}->{is_valid} = 0;
+		$templates->{$_}->{last_error} = "miss template.ini !";
 		verbose " (INVALID: miss template.ini !)";
 	}
 	verbose "\n";
@@ -101,3 +112,6 @@ my $code_gen = {
 };
 die "[critical] You MUST pass a template file as argument." unless(defined($ARGV[0]));
 loadConfig($config,$ARGV[0]);
+verbose "Templates: $config->{templates}\n";
+loadTemplate($templates->{$config->{templates}}->{content},"$config->{templates_basedir}/$config->{templates}/template.ini");
+print Data::Dumper::Dumper($templates);
