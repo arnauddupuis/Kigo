@@ -11,9 +11,14 @@ use Data::Dumper;
 
 # global variables (I know).
 my $global_verbose=0;
+my $global_debug=0;
 
 sub verbose {
 	print shift if($global_verbose);
+}
+
+sub debug {
+	print "[debug] " . shift if($global_debug);
 }
 
 sub loadConfig {
@@ -24,7 +29,6 @@ sub loadConfig {
 		next if(/^[#\/!*]+/);
 		next if(/^\s*$/);
 		verbose "Processing: $_\n";
-# 		my ($key,$value)=split(/=/,$_);
 		my ($key,$value)= $_ =~ /^([^=]+)\s*=\s*(.+)$/;
 		$cfg->{$key} = $value unless(defined($cfg->{$key}));
 	}
@@ -51,16 +55,43 @@ sub writeFile {
 sub loadTemplate {
 	my $tpl_struct = shift;
 	my $file = shift;
+	my @cfg_table_keys = ('extra_includes','types');
 	loadConfig($tpl_struct,$file);
 	# TODO: process each template key
-	foreach my $tmp_key ( %{} ){
+	# NOTE: It looks done...
+	foreach my $tmp_key ( keys(%{$tpl_struct}) ){
+		# remove uninitialized keys
+		delete $tpl_struct->{$tmp_key} unless( defined( $tmp_key ) && $tmp_key ne '' );
+		debug "$tmp_key : $tpl_struct->{$tmp_key}\n";
+		if( $tpl_struct->{$tmp_key} =~ /,/ ){
+			$tpl_struct->{$tmp_key} = [split(/,/,$tpl_struct->{$tmp_key})];
+		}
+		if( $tmp_key =~ /^([^:]+):([^:\s]+)$/){
+			debug "   (group) $1 (var) $2\n";
+			$tpl_struct->{$1}->{$2} = $tpl_struct->{$tmp_key};
+			if( $tpl_struct->{$1}->{$2} eq $tpl_struct->{$tmp_key}){
+				delete $tpl_struct->{$tmp_key};
+			}
+		}
+	}
+	
+	# Template sanity check.
+	
+	# output directories
+	
+	# tables
+	foreach my $tmp_tbl_key (@cfg_table_keys){
+		$tpl_struct->{$tmp_tbl_key} = [] unless( defined( $tpl_struct->{$tmp_tbl_key} ) );
+		if( ref($tpl_struct->{$tmp_tbl_key}) ne 'ARRAY'){
+			$tpl_struct->{$tmp_tbl_key} = [$tpl_struct->{$tmp_tbl_key}];
+		}
 	}
 }
 
 my $config={templates_basedir=>'./templates'};
 my $templates = {};
 $config->{templates_basedir}=$ENV{KIGO_TEMPLATE_PATH} if(defined($ENV{KIGO_TEMPLATE_PATH}) && $ENV{KIGO_TEMPLATE_PATH});
-GetOptions ("define=s" => $config,"verbose"=>\$global_verbose);
+GetOptions ("define=s" => $config,"verbose"=>\$global_verbose, "debug"=>\$global_debug);
 verbose "templates base directory is: $config->{templates_basedir}\n";
 
 verbose "Scanning available templates:\n";
@@ -117,4 +148,4 @@ die "[critical] You MUST pass a template file as argument." unless(defined($ARGV
 loadConfig($config,$ARGV[0]);
 verbose "Templates: $config->{templates}\n";
 loadTemplate($templates->{$config->{templates}}->{content},"$config->{templates_basedir}/$config->{templates}/template.ini");
-print Data::Dumper::Dumper($templates);
+debug Data::Dumper::Dumper($templates);
