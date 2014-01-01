@@ -30,6 +30,7 @@ sub loadConfig {
 		next if(/^\s*$/);
 		verbose "Processing: $_\n";
 		my ($key,$value)= $_ =~ /^([^=]+)\s*=\s*(.+)$/;
+		next unless(defined($value));
 		$cfg->{$key} = $value unless(defined($cfg->{$key}));
 	}
 	close($fh);
@@ -74,8 +75,15 @@ sub loadTemplate {
 			}
 		}
 	}
-	
+	verbose "starting template.ini sanity checks.\n";
 	# Template sanity check.
+	if( defined($tpl_struct->{'output'}->{'root'})){
+		verbose "sanity check: output:root...ok\n";
+	}
+	else {
+		verbose "sanity check: output:root...not ok\n";
+		$tpl_struct->{''} = '';
+	}
 	
 	# output directories
 	
