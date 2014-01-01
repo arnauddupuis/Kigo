@@ -56,7 +56,7 @@ sub writeFile {
 sub loadTemplate {
 	my $tpl_struct = shift;
 	my $file = shift;
-	my @cfg_table_keys = ('extra_includes','types');
+	my @cfg_table_keys = ('extra_includes','types','use');
 	loadConfig($tpl_struct,$file);
 	# TODO: process each template key
 	# NOTE: It looks done...
