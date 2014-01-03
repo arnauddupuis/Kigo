@@ -7,6 +7,7 @@
 use strict;
 use warnings;
 use Getopt::Long;
+use File::Path qw(make_path);
 use Data::Dumper;
 
 # global variables (I know).
@@ -75,25 +76,70 @@ sub loadTemplate {
 			}
 		}
 	}
-	verbose "starting template.ini sanity checks.\n";
-	# Template sanity check.
-	if( defined($tpl_struct->{'output'}->{'root'})){
-		verbose "sanity check: output:root...ok\n";
-	}
-	else {
-		verbose "sanity check: output:root...not ok\n";
-		$tpl_struct->{''} = '';
-	}
 	
-	# output directories
-	
-	# tables
 	foreach my $tmp_tbl_key (@cfg_table_keys){
 		$tpl_struct->{$tmp_tbl_key} = [] unless( defined( $tpl_struct->{$tmp_tbl_key} ) );
 		if( ref($tpl_struct->{$tmp_tbl_key}) ne 'ARRAY'){
 			$tpl_struct->{$tmp_tbl_key} = [$tpl_struct->{$tmp_tbl_key}];
 		}
 	}
+}
+
+sub verifyTemplateSanity {
+	my $tpl_struct = shift;
+	my $tpl_name = shift;
+	my $status_struct = { is_sanity_ok => 1, error_string => "No error detected." };
+	my @output_directories = ();
+	
+	verbose "starting template.ini sanity checks.\n";
+	# Template sanity check.
+	verbose "sanity check: template defines at least one type...";
+	my $count = scalar( @{ $tpl_struct->{$tpl_name}->{'content'}->{'types'} } );
+	if( $count >= 1 ){
+		verbose "ok ($count type(s) defined)\n";
+	}
+	else {
+		verbose "not ok\n";
+		$status_struct->{'is_sanity_ok'}=0;
+		$status_struct->{'error_string'}="Template must define at least one type to be valid. None found.";
+	}
+	
+	
+	# output directories
+	if( defined($tpl_struct->{$tpl_name}->{'content'}->{'output'}->{'root'})){
+		verbose "sanity check: output:root...ok\n";
+	}
+	else {
+		verbose "sanity check: output:root...not ok (adding default value: ./)\n";
+		$tpl_struct->{$tpl_name}->{'content'}->{'output'}->{'root'} = './';
+	}
+	foreach my $type ( @{ $tpl_struct->{$tpl_name}->{'content'}->{'types'} } ){
+		if( defined($tpl_struct->{$tpl_name}->{'content'}->{'output'}->{$type})){
+			verbose "sanity check: output:$type...ok\n";
+		}
+		else {
+			verbose "sanity check: output:$type...not ok (adding default value: /$type)\n";
+			$tpl_struct->{$tpl_name}->{'content'}->{'output'}->{$type} = "/$type";
+		}
+		push @output_directories, $tpl_struct->{$tpl_name}->{'content'}->{'output'}->{'root'}.$tpl_struct->{$tpl_name}->{'content'}->{'output'}->{$type}
+	}
+	debug "\@output_directories: ".join(',',@output_directories)."\n";
+	verbose "sanity check: creating output directories.\n";
+	make_path(@output_directories);
+	foreach my $dir (@output_directories){
+		verbose "sanity check: verifing $dir...";
+		if( -e $dir && -d $dir){
+			verbose "ok\n";
+		}
+		else{
+			verbose "not ok\n";
+			$status_struct->{'is_sanity_ok'}=0;
+			$status_struct->{'error_string'}="Unable to create the $dir directory (it is possible that other directories could not be created, only the last failure will be shown).";
+		}
+	}
+	# tables
+	
+	return $status_struct;
 }
 
 my $config={templates_basedir=>'./templates'};
@@ -156,4 +202,6 @@ die "[critical] You MUST pass a template file as argument." unless(defined($ARGV
 loadConfig($config,$ARGV[0]);
 verbose "Templates: $config->{templates}\n";
 loadTemplate($templates->{$config->{templates}}->{content},"$config->{templates_basedir}/$config->{templates}/template.ini");
-debug Data::Dumper::Dumper($templates);
+verifyTemplateSanity($templates,'PHP');
+
+debug Data::Dumper::Dumper( $templates );
