@@ -91,14 +91,21 @@ sub verifyTemplateSanity {
 	my $status_struct = { is_sanity_ok => 1, error_string => "No error detected." };
 	my @output_directories = ();
 	
-	verbose "starting template.ini sanity checks.\n";
+	verbose "$tpl_name: starting template.ini sanity checks.\n";
 	# Template sanity check.
 	verbose "sanity check: template defines at least one type...";
-	my $count = scalar( @{ $tpl_struct->{$tpl_name}->{'content'}->{'types'} } );
-	if( $count >= 1 ){
-		verbose "ok ($count type(s) defined)\n";
+	if( defined($tpl_struct->{$tpl_name}->{'content'}->{'types'}) ){
+		my $count = scalar( @{ $tpl_struct->{$tpl_name}->{'content'}->{'types'} } );
+		if( $count >= 1 ){
+			verbose "ok ($count type(s) defined)\n";
+		}
+		else {
+			verbose "not ok\n";
+			$status_struct->{'is_sanity_ok'}=0;
+			$status_struct->{'error_string'}="Template must define at least one type to be valid. None found.";
+		}
 	}
-	else {
+	else{
 		verbose "not ok\n";
 		$status_struct->{'is_sanity_ok'}=0;
 		$status_struct->{'error_string'}="Template must define at least one type to be valid. None found.";
@@ -110,8 +117,8 @@ sub verifyTemplateSanity {
 		verbose "sanity check: output:root...ok\n";
 	}
 	else {
-		verbose "sanity check: output:root...not ok (adding default value: ./)\n";
-		$tpl_struct->{$tpl_name}->{'content'}->{'output'}->{'root'} = './';
+		verbose "sanity check: output:root...not ok (adding default value: ./generated_$tpl_name)\n";
+		$tpl_struct->{$tpl_name}->{'content'}->{'output'}->{'root'} = './generated_'.$tpl_name;
 	}
 	foreach my $type ( @{ $tpl_struct->{$tpl_name}->{'content'}->{'types'} } ){
 		if( defined($tpl_struct->{$tpl_name}->{'content'}->{'output'}->{$type})){
@@ -144,8 +151,9 @@ sub verifyTemplateSanity {
 
 my $config={templates_basedir=>'./templates'};
 my $templates = {};
+my $ignore_sanity_check = 0;
 $config->{templates_basedir}=$ENV{KIGO_TEMPLATE_PATH} if(defined($ENV{KIGO_TEMPLATE_PATH}) && $ENV{KIGO_TEMPLATE_PATH});
-GetOptions ("define=s" => $config,"verbose"=>\$global_verbose, "debug"=>\$global_debug);
+GetOptions ("define=s" => $config,"verbose"=>\$global_verbose, "debug"=>\$global_debug,"no-sanity-check"=>\$ignore_sanity_check);
 verbose "templates base directory is: $config->{templates_basedir}\n";
 
 verbose "Scanning available templates:\n";
@@ -202,6 +210,24 @@ die "[critical] You MUST pass a template file as argument." unless(defined($ARGV
 loadConfig($config,$ARGV[0]);
 verbose "Templates: $config->{templates}\n";
 loadTemplate($templates->{$config->{templates}}->{content},"$config->{templates_basedir}/$config->{templates}/template.ini");
-verifyTemplateSanity($templates,'PHP');
+
 
 debug Data::Dumper::Dumper( $templates );
+
+unless ( $ignore_sanity_check ){
+	foreach my $tmp_tpl ( keys( %{$templates} ) ){
+		if( $templates->{$tmp_tpl}->{'is_valid'} ){
+			my $tpl_sanity = verifyTemplateSanity($templates,$tmp_tpl);
+			debug Data::Dumper::Dumper( $tpl_sanity );
+			if( $tpl_sanity->{is_sanity_ok} ){
+				verbose "$tmp_tpl: sanity check...ok\n";
+			}
+			else{
+				print "[error] sanity check for template $tmp_tpl...not ok\n\tlast error: $tpl_sanity->{'error_string'}\n";
+			}
+		}
+		else{
+			verbose "$tmp_tpl: template sanity check not executed because the template is already marked as invalid.\n";
+		}
+	}
+}
