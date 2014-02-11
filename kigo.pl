@@ -291,7 +291,7 @@ if( exists($config->{'templates'}) && ref($config->{'templates'}) eq 'ARRAY' && 
 						if( defined( $templates->{$tmp_tpl}->{'content'}->{'use'} ) ){
 							foreach my $tmp_use_tpl ( @{ $templates->{$tmp_tpl}->{'content'}->{'use'} } ){
 								unless( grep{ $_ eq $tmp_use_tpl } @{ $config->{'templates'} } ){
-									verbose "Adding '$tmp_tpl' to the list of templates to load.\n";
+									verbose "Adding '$tmp_use_tpl' to the list of templates to load.\n";
 									push @{ $config->{'templates'} }, $tmp_use_tpl;
 								}
 							}
