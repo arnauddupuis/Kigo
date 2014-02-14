@@ -14,6 +14,7 @@ use Data::Dumper;
 my $global_verbose=0;
 my $global_debug=0;
 my @global_valid_types = ('class','controller','api','db_table');
+$|++;
 
 sub verbose {
 	print join('',@_) if($global_verbose);
@@ -206,7 +207,38 @@ sub verifyTemplateSanity {
 	return $status_struct;
 }
 
-## NOTE: Beginning og the main code
+sub parseMember {
+	my $member = shift;
+	my $return_value = {
+		name => '',
+		type => '',
+		classinfo => '',
+		extra => ''
+	};
+	if($member =~ /^([^{]+)\{([^}]+)\}$/){
+		debug "Processing key=$1 & value=$2\n";
+		$return_value->{name} = $1;
+		$return_value->{type} = $2;
+		
+	}
+	elsif($member =~ /^([^{]+)\{([^}]+)\}\{([^}]+)\}$/){
+		debug "Processing key=$1 & value=$2 & extra=$3\n";
+		$return_value->{name}  = $1;
+		$return_value->{type}  = $2;
+		$return_value->{extra} = $3;
+	}
+	elsif($member =~ /^([^{]+)\{([^}]+)\}\{([^}]+)\}\{([^}]+)\}$/){
+		debug "Processing key=$1 & value=$2 & extra=$3 extra2=$4\n";
+		$return_value->{name}      = $1;
+		$return_value->{type}      = $2;
+		$return_value->{extra}     = $3;
+		$return_value->{classinfo} = $4;
+	}
+	debug Data::Dumper::Dumper( $return_value );
+	return $return_value;
+}
+
+## NOTE: Beginning of the main code
 
 my $config={templates_basedir=>'./templates'};
 my $templates = {};
@@ -322,8 +354,10 @@ verbose "Checking for templates usage in input file (this will check for templat
 # I need to reparse this because now I have the sanity status for all templates.
 foreach my $tmp_tpl ( keys( %{$templates} ) ) {
 	foreach my $used_tpl ( @{ $templates->{$tmp_tpl}->{'content'}->{'use'} } ){
-		die "[critical] Template '$used_tpl' is required by template '$tmp_tpl' but was not found.\n" unless( exists( $templates->{$used_tpl} ) );
-		die "[critical] Template '$used_tpl' is required by template '$tmp_tpl' but is not valid.\n" unless( exists( $templates->{$used_tpl}->{'is_valid'} ) && $templates->{$used_tpl}->{'is_valid'} );
-		die "[critical] Template '$used_tpl' is required by template '$tmp_tpl' but did not pass sanity checks ($templates->{$used_tpl}->{'sanity_check'}->{'error_string'}).\n" unless( exists( $templates->{$used_tpl}->{'sanity_check'} ) && $templates->{$used_tpl}->{'sanity_check'}->{'is_sanity_ok'} );
+		verbose "Checking for template: '$used_tpl' (used by template '$tmp_tpl')...";
+		die "not ok\n[critical] Template '$used_tpl' is required by template '$tmp_tpl' but was not found.\n" unless( exists( $templates->{$used_tpl} ) );
+		die "not ok\n[critical] Template '$used_tpl' is required by template '$tmp_tpl' but is not valid.\n" unless( exists( $templates->{$used_tpl}->{'is_valid'} ) && $templates->{$used_tpl}->{'is_valid'} );
+		die "not ok\n[critical] Template '$used_tpl' is required by template '$tmp_tpl' but did not pass sanity checks ($templates->{$used_tpl}->{'sanity_check'}->{'error_string'}).\n" unless( exists( $templates->{$used_tpl}->{'sanity_check'} ) && $templates->{$used_tpl}->{'sanity_check'}->{'is_sanity_ok'} );
+		verbose "ok\n";
 	}
 }
