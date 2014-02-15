@@ -366,5 +366,19 @@ foreach my $tmp_tpl ( keys( %{$templates} ) ) {
 # Now that the templates are good enough to be use, we need to expand the variables we will use.
 my $variables_hold = {
 	'K_PARENT_CONSTRUCTION' => "",
-	
+	'K_PARENT_CONSTRUCTOR_PARAMETERS' => "",
+	'LC_MEMBERNAME' => {}, # all 'membername' holds all the members for a class
+	'UCF_MEMBERNAME' => {},
+	'LICENCE' => "",
+	'INCLUDES' => "",
+	'CLASS_NAME' => $config->{'class'},
+	'INHERITANCE' => "",
+	'MEMBER_VARIABLES_DECLARATION' => "",
+	'CONSTRUCTOR_PARAMETERS' => "",
+	'CLASS_PARENT_CONSTRUCTION' => "",
+	'MEMBER_VARIABLES_INIT' => "",
+	'CLASS_EXTRA_CONSTRUCTOR_CODE' => "",
+	'SETTERS' => "",
+	'GETTERS' => "",
+	'EXTRA_TEMPLATES_PLACEHOLDER' => "",
 };
