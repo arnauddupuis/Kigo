@@ -300,6 +300,7 @@ my $code_gen = {
 	extra_includes => "",
 	copy_operator => ""
 };
+
 die "[critical] You MUST pass a template file as argument." unless(defined($ARGV[0]));
 loadConfig($config,$ARGV[0]);
 
@@ -361,3 +362,9 @@ foreach my $tmp_tpl ( keys( %{$templates} ) ) {
 		verbose "ok\n";
 	}
 }
+
+# Now that the templates are good enough to be use, we need to expand the variables we will use.
+my $variables_hold = {
+	'K_PARENT_CONSTRUCTION' => "",
+	
+};
