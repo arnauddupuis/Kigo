@@ -8,6 +8,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 use File::Path qw(make_path);
+use File::Basename;
 use Data::Dumper;
 
 # global variables (I know).
@@ -368,8 +369,10 @@ my $variables_hold = {
 	'K_PARENT_CONSTRUCTION' => "",
 	'K_PARENT_CONSTRUCTOR_PARAMETERS' => "",
 	'LC_MEMBERNAME' => {}, # all 'membername' holds all the members for a class
+	'LCF_MEMBERNAME' => {},
+	'UC_MEMBERNAME' => {},
 	'UCF_MEMBERNAME' => {},
-	'LICENCE' => "",
+	'LICENSE' => "",
 	'INCLUDES' => "",
 	'CLASS_NAME' => $config->{'class'},
 	'INHERITANCE' => "",
@@ -382,3 +385,30 @@ my $variables_hold = {
 	'GETTERS' => "",
 	'EXTRA_TEMPLATES_PLACEHOLDER' => "",
 };
+
+# We now expand LC_MEMBERNAME, UCF_MEMBERNAME, UC_MEMBERNAME and LCF_MEMBERNAME
+foreach my $tmp_member (@{ $config->{'members'} }){
+	my $parsed_member = parseMember($tmp_member);
+	debug Data::Dumper::Dumper( $parsed_member );
+	$variables_hold->{'LC_MEMBERNAME'}->{$parsed_member->{'name'}} = lc($parsed_member->{'name'});
+	$variables_hold->{'LCF_MEMBERNAME'}->{$parsed_member->{'name'}} = lcfirst($parsed_member->{'name'});
+	$variables_hold->{'UC_MEMBERNAME'}->{$parsed_member->{'name'}} = uc($parsed_member->{'name'});
+	$variables_hold->{'UCF_MEMBERNAME'}->{$parsed_member->{'name'}} = ucfirst($parsed_member->{'name'});
+}
+
+# Now loading the license
+if( -e $config->{'license'} ){
+	verbose "Loading license from: $config->{'license'}\n";
+	$variables_hold->{'LICENSE'} = loadFile( $config->{'license'} );
+}
+elsif( -e dirname($ARGV[0])."/$config->{'license'}" ){
+	verbose "Loading license from: ".dirname($ARGV[0])."/$config->{'license'}\n";
+	$variables_hold->{'LICENSE'} = loadFile( dirname($ARGV[0])."/$config->{'license'}" );
+}
+else{
+	verbose "Inserting license from description file.\n";
+	$variables_hold->{'LICENSE'} = $config->{'license'};
+}
+
+debug "Variables hold: ", Data::Dumper::Dumper( $variables_hold );
+

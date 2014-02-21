@@ -1,0 +1,2 @@
+# This template tells the generator how to include an unknown type (like a class)
+include_once '/*__UNKNOWN_TYPE__*/.php';
