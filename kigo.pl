@@ -372,7 +372,7 @@ my $variables_hold = {
 	'CONSTRUCTOR_PARAMETERS' => "",
 	'EXTRA_TEMPLATES_PLACEHOLDER' => "",
 	'GETTERS' => "",
-	'INCLUDES' => "",
+	'INCLUDES' => [],
 	'INHERITANCE' => [],
 	'K_PARENT_CONSTRUCTION' => "",
 	'K_PARENT_CONSTRUCTOR_PARAMETERS' => "",
@@ -390,7 +390,16 @@ my $variables_hold = {
 if( $variables_hold->{'CLASS_NAME'} =~ /^([^\:]+):([^\:]+)$/ ){
 	verbose "Found inheritance for $1 (inherits from: $2).\n";
 	$variables_hold->{'CLASS_NAME'} = $1;
-	push @{ $variables_hold->{'INHERITANCE'} }, split(/,/,$2);
+	push @{ $variables_hold->{'INHERITANCE'} }, split(/;/,$2);
+	
+	if( defined( $templates->{$config->{'templates'}->[0]}->{'content'}->{'default'}->{'file_suffix'} ) && $templates->{$config->{'templates'}->[0]}->{'content'}->{'default'}->{'file_suffix'} ne "" ){
+		unless( grep{ $_ eq $2.$templates->{$config->{'templates'}->[0]}->{'content'}->{'default'}->{'file_suffix'} } @{ $variables_hold->{'INCLUDES'} } ){
+			push @{ $variables_hold->{'INCLUDES'} }, $2.$templates->{$config->{'templates'}->[0]}->{'content'}->{'default'}->{'file_suffix'};
+		}
+	}
+	else{
+		print "WARNING: class $variables_hold->{'CLASS_NAME'} needs a parent but we cannot determine the default file suffix for the default template ($config->{'templates'}->[0]).\n";
+	}
 }
 
 # We now expand LC_MEMBERNAME, UCF_MEMBERNAME, UC_MEMBERNAME and LCF_MEMBERNAME
