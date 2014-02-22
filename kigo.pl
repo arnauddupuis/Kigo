@@ -366,25 +366,32 @@ foreach my $tmp_tpl ( keys( %{$templates} ) ) {
 
 # Now that the templates are good enough to be use, we need to expand the variables we will use.
 my $variables_hold = {
+	'CLASS_NAME' => $config->{'class'},
+	'CLASS_EXTRA_CONSTRUCTOR_CODE' => "",
+	'CLASS_PARENT_CONSTRUCTION' => "",
+	'CONSTRUCTOR_PARAMETERS' => "",
+	'EXTRA_TEMPLATES_PLACEHOLDER' => "",
+	'GETTERS' => "",
+	'INCLUDES' => "",
+	'INHERITANCE' => [],
 	'K_PARENT_CONSTRUCTION' => "",
 	'K_PARENT_CONSTRUCTOR_PARAMETERS' => "",
 	'LC_MEMBERNAME' => {}, # all 'membername' holds all the members for a class
-	'LCF_MEMBERNAME' => {},
-	'UC_MEMBERNAME' => {},
-	'UCF_MEMBERNAME' => {},
+	'LCF_MEMBERNAME' => {}, # all 'membername' holds all the members for a class
 	'LICENSE' => "",
-	'INCLUDES' => "",
-	'CLASS_NAME' => $config->{'class'},
-	'INHERITANCE' => "",
 	'MEMBER_VARIABLES_DECLARATION' => "",
-	'CONSTRUCTOR_PARAMETERS' => "",
-	'CLASS_PARENT_CONSTRUCTION' => "",
 	'MEMBER_VARIABLES_INIT' => "",
-	'CLASS_EXTRA_CONSTRUCTOR_CODE' => "",
 	'SETTERS' => "",
-	'GETTERS' => "",
-	'EXTRA_TEMPLATES_PLACEHOLDER' => "",
+	'UC_MEMBERNAME' => {}, # all 'membername' holds all the members for a class
+	'UCF_MEMBERNAME' => {}, # all 'membername' holds all the members for a class
 };
+
+# Parsing class name to look for inheritance
+if( $variables_hold->{'CLASS_NAME'} =~ /^([^\:]+):([^\:]+)$/ ){
+	verbose "Found inheritance for $1 (inherits from: $2).\n";
+	$variables_hold->{'CLASS_NAME'} = $1;
+	push @{ $variables_hold->{'INHERITANCE'} }, split(/,/,$2);
+}
 
 # We now expand LC_MEMBERNAME, UCF_MEMBERNAME, UC_MEMBERNAME and LCF_MEMBERNAME
 foreach my $tmp_member (@{ $config->{'members'} }){
