@@ -80,6 +80,21 @@ sub loadConfig {
 		}
 	}
 }
+
+# This function loads the content of a .ktpl file removing the comments and return it as a single string.
+sub loadKtpl {
+	my $file = shift;
+	my $content = "";
+	open(my $fh,'<',$file) or die "$file: $!\n";
+	while(<$fh>){
+		next if( /^\s*#/ );
+		$content .= $_;
+	}
+	close($fh);
+	return $content;
+}
+
+# This function loads the content of a file removing the comments and return it as a single string.
 sub loadFile {
 	my $file = shift;
 	my $content = "";
@@ -243,6 +258,7 @@ sub parseMember {
 
 my $config={templates_basedir=>'./templates'};
 my $templates = {};
+my $templates_types_mapping = {};
 my $ignore_sanity_check = 0;
 $config->{templates_basedir}=$ENV{KIGO_TEMPLATE_PATH} if(defined($ENV{KIGO_TEMPLATE_PATH}) && $ENV{KIGO_TEMPLATE_PATH});
 GetOptions ("define=s" => $config,"verbose"=>\$global_verbose, "debug"=>\$global_debug,"no-sanity-check"=>\$ignore_sanity_check);
@@ -322,6 +338,7 @@ if( exists($config->{'templates'}) && ref($config->{'templates'}) eq 'ARRAY' && 
 					}
 					if( $tpl_sanity->{is_sanity_ok} ){
 						verbose "$tmp_tpl: sanity check...ok\n";
+						# Add dependencies to the stack of templates to load.
 						if( defined( $templates->{$tmp_tpl}->{'content'}->{'use'} ) ){
 							foreach my $tmp_use_tpl ( @{ $templates->{$tmp_tpl}->{'content'}->{'use'} } ){
 								unless( grep{ $_ eq $tmp_use_tpl } @{ $config->{'templates'} } ){
@@ -330,7 +347,17 @@ if( exists($config->{'templates'}) && ref($config->{'templates'}) eq 'ARRAY' && 
 								}
 							}
 						}
-						
+						# Mapping template defined types
+						if( defined( $templates->{$tmp_tpl}->{'content'}->{'types'} ) && ref($templates->{$tmp_tpl}->{'content'}->{'types'}) eq 'ARRAY' ){
+							foreach my $tmp_type ( @{ $templates->{$tmp_tpl}->{'content'}->{'types'} } ){
+								if( exists($templates_types_mapping->{$tmp_type}) && defined($templates_types_mapping->{$tmp_type}) && $templates_types_mapping->{$tmp_type} ne $tmp_tpl ){
+									die "[critical] type '$tmp_type' is defined by more than one template (at minimum $templates_types_mapping->{$tmp_type} and $tmp_tpl).\n";
+								}
+								else {
+									$templates_types_mapping->{$tmp_type} = $tmp_tpl;
+								}
+							}
+						}
 					}
 					else{
 						print "[error] sanity check for template $tmp_tpl...not ok\n\tlast error: $tpl_sanity->{'error_string'}\n";
@@ -347,8 +374,20 @@ else {
 	die "[critical] the file $ARGV[0] does not defines any templates to use or was incorrectly parsed.\n";
 }
 
+# Verify config file coherence regarding the file to generate
+my @available_templates_types = ();
+foreach my $tmp_tpl ( keys( %{$templates} ) ){
+	push @available_templates_types, @{ $templates->{$tmp_tpl}->{'content'}->{'types'} };
+}
+foreach my $to_generate_type ( @{ $config->{'generate'} } ){
+	unless( grep{ $_ eq $to_generate_type } @available_templates_types ){
+		die "[critical] the file $ARGV[0] require to generate files of type '$to_generate_type' but this type is not defined in included templates.\n";
+	}
+}
+
 debug Data::Dumper::Dumper( $config );
 debug Data::Dumper::Dumper( $templates );
+debug Data::Dumper::Dumper( $templates_types_mapping );
 
 
 verbose "Checking for templates usage in input file (this will check for templates used by the input file and check each template's dependencies).\n";
@@ -369,6 +408,7 @@ my $variables_hold = {
 	'CLASS_NAME' => $config->{'class'},
 	'CLASS_EXTRA_CONSTRUCTOR_CODE' => "",
 	'CLASS_PARENT_CONSTRUCTION' => "",
+	'CLASS_SKELETON' => "",
 	'CONSTRUCTOR_PARAMETERS' => "",
 	'EXTRA_TEMPLATES_PLACEHOLDER' => "",
 	'GETTERS' => "",
@@ -384,6 +424,7 @@ my $variables_hold = {
 	'SETTERS' => "",
 	'UC_MEMBERNAME' => {}, # all 'membername' holds all the members for a class
 	'UCF_MEMBERNAME' => {}, # all 'membername' holds all the members for a class
+	'VARIABLES_DETAILS' => {},
 };
 
 # Parsing class name to look for inheritance
@@ -410,6 +451,7 @@ foreach my $tmp_member (@{ $config->{'members'} }){
 	$variables_hold->{'LCF_MEMBERNAME'}->{$parsed_member->{'name'}} = lcfirst($parsed_member->{'name'});
 	$variables_hold->{'UC_MEMBERNAME'}->{$parsed_member->{'name'}} = uc($parsed_member->{'name'});
 	$variables_hold->{'UCF_MEMBERNAME'}->{$parsed_member->{'name'}} = ucfirst($parsed_member->{'name'});
+	$variables_hold->{'VARIABLES_DETAILS'}->{$parsed_member->{'name'}} = $parsed_member;
 }
 
 # Now loading the license
@@ -427,4 +469,16 @@ else{
 }
 
 debug "Variables hold: ", Data::Dumper::Dumper( $variables_hold );
+
+# TODO
+# Loading class skeleton if we have to generate a class.
+# if(  ){
+# 	
+# }
+
+foreach my $types_to_generate ( @{ $config->{'generate'} } ){
+	debug "generate files for type: $types_to_generate\n";
+}
+
+
 
