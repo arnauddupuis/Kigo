@@ -477,7 +477,19 @@ debug "Variables hold: ", Data::Dumper::Dumper( $variables_hold );
 # }
 
 foreach my $types_to_generate ( @{ $config->{'generate'} } ){
-	debug "generate files for type: $types_to_generate\n";
+	debug "generate files for type: $types_to_generate (template: $templates_types_mapping->{$types_to_generate})\n";
+	foreach my $arch_item ( keys( %{ $templates->{$templates_types_mapping->{$types_to_generate}}->{'content'}->{$types_to_generate} } ) ){
+		debug "\t$arch_item => $templates->{$templates_types_mapping->{$types_to_generate}}->{'content'}->{$types_to_generate}->{$arch_item}\n";
+		if( $templates->{$templates_types_mapping->{$types_to_generate}}->{'content'}->{'type'}->{$types_to_generate} eq "class"){
+			# Setting default value for main_template
+			$templates->{$templates_types_mapping->{$types_to_generate}}->{'content'}->{$types_to_generate}->{'main_template'} = "class.ktpl" unless( defined($templates->{$templates_types_mapping->{$types_to_generate}}->{'content'}->{$types_to_generate}->{'main_template'}) );
+			# Setting default value for getter
+			$templates->{$templates_types_mapping->{$types_to_generate}}->{'content'}->{$types_to_generate}->{'getter'} = "getter.ktpl" unless( defined($templates->{$templates_types_mapping->{$types_to_generate}}->{'content'}->{$types_to_generate}->{'getter'}) );
+			# Setting default value for setter
+			$templates->{$templates_types_mapping->{$types_to_generate}}->{'content'}->{$types_to_generate}->{'setter'} = "setter.ktpl" unless( defined($templates->{$templates_types_mapping->{$types_to_generate}}->{'content'}->{$types_to_generate}->{'setter'}) );
+			debug ""
+		}
+	}
 }
 
 
